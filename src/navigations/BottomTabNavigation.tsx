@@ -1,9 +1,9 @@
 import React from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Feather } from '@expo/vector-icons'
-import Home from "/Users/Muhammad Rusqi/movie_app/screens/Home"
+import Home from '/Users/Muhammad Rusqi/movie_app/screens/Home'
 import Search from '/Users/Muhammad Rusqi/movie_app/screens/Search'
-import Favorite from "/Users/Muhammad Rusqi/movie_app/screens/Favorite"
+import Favorite from '/Users/Muhammad Rusqi/movie_app/screens/Favorite'
 
 const Tab = createBottomTabNavigator()
 
