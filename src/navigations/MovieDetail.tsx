@@ -1,26 +1,40 @@
-import React from 'react'
-import { View, Text, StyleSheet, Button } from 'react-native'
+import React from 'react';
+import { View, Text, Button } from 'react-native';
+import { API_URL, API_ACCESS_TOKEN } from '@env';
 
-export default function MovieDetail({ navigation }: { navigation: any }): JSX.Element {
-  
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    marginVertical20: {
-      marginVertical: 20,
-    },
-  })
+const MovieDetail = ({ navigation }: any): any => {
+  const fetchData = (): void => {
+    if (!API_URL || !API_ACCESS_TOKEN) {
+      throw new Error('ENV not found');
+    }
+
+    const options = {
+      method: 'GET',
+      headers: {
+        accept: 'application/json',
+        Authorization: `Bearer ${API_ACCESS_TOKEN}`,
+      },
+    };
+
+    fetch(API_URL, options)
+      .then((response) => response.json())
+      .then((response) => {
+        console.log(response);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text>Movie Detail Page</Text>
       <Button
-        title="Kembali"
-        onPress={() => navigation.goBack('Home')}
+        title="Fetch Data"
+        onPress={fetchData}
       />
     </View>
-  )
-}
+  );
+};
+
+export default MovieDetail;
