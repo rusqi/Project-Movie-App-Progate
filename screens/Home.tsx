@@ -35,7 +35,7 @@ const Home = (): JSX.Element => {
             title={movieList.title}
             path={movieList.path}
             coverType={movieList.coverType}
-            key={movieList.title}
+            key={movieList.path}
           />
         ))}
         <StatusBar translucent={false} />
