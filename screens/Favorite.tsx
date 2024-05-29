@@ -1,10 +1,23 @@
 import React from 'react'
-import { View, Text } from 'react-native'
+import { ScrollView, View, StatusBar, StyleSheet, Text } from 'react-native'
 
-export default function Favorite(): JSX.Element {
+const Favorite = (): JSX.Element => {
   return (
-    <View>
-      <Text>Favorite</Text>
-    </View>
+    <ScrollView>
+      <View style={styles.container}>
+        <Text>Favorite</Text>
+      </View>
+    </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    marginTop: StatusBar.currentHeight ?? 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    rowGap: 16,
+  },
+})
+
+export default Favorite

@@ -1,47 +1,41 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, ScrollView, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, ScrollView, FlatList, ActivityIndicator, TouchableOpacity } from 'react-native';
 import { API_ACCESS_TOKEN } from '@env';
 import { FontAwesome } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { Movie } from '../types/app';
 import MovieItem from '../components/movies/MovieItem';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const MovieDetail = ({ route }: any): JSX.Element => {
-  const { id } = route.params;
+  const { id, coverType } = route.params;
   const [movie, setMovie] = useState<Movie | null>(null);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchMovieDetail();
-  }, []);
+    checkIfFavorite();
+  }, [id]);
 
-  const fetchMovieDetail = (): void => {
-    setLoading(true);
-    setError(null);
-    const url = `https://api.themoviedb.org/3/movie/${id}`;
-    const options = {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
-        Authorization: `Bearer ${API_ACCESS_TOKEN}`,
-      },
-    };
-
-    fetch(url, options)
-      .then(async (response) => await response.json())
-      .then((data) => {
-        setMovie(data);
-        fetchRecommendations();
-      })
-      .catch((error) => {
-        setError('Failed to fetch data');
-        setLoading(false);
-      });
+  const fetchMovieDetail = async (): Promise<void> => {
+    try {
+      setLoading(true);
+      setError(null);
+      const movieData = await fetchFromApi(`https://api.themoviedb.org/3/movie/${id}`);
+      setMovie(movieData);
+      const recommendationData = await fetchFromApi(`https://api.themoviedb.org/3/movie/${id}/recommendations`);
+      setRecommendations(recommendationData.results);
+    } catch (err) {
+      setError('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const fetchRecommendations = (): void => {
-    const url = `https://api.themoviedb.org/3/movie/${id}/recommendations`;
+  const fetchFromApi = async (url: string): Promise<any> => {
     const options = {
       method: 'GET',
       headers: {
@@ -50,16 +44,56 @@ const MovieDetail = ({ route }: any): JSX.Element => {
       },
     };
 
-    fetch(url, options)
-      .then(async (response) => await response.json())
-      .then((data) => {
-        setRecommendations(data.results);
-        setLoading(false);
-      })
-      .catch((error) => {
-        setError('Failed to fetch recommendations');
-        setLoading(false);
-      });
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    return response.json();
+  };
+
+  const addFavorite = async (movie: Movie): Promise<void> => {
+    try {
+      const initialData: string | null = await AsyncStorage.getItem('@FavoriteList');
+      let favMovieList: Movie[] = initialData ? JSON.parse(initialData) : [];
+      favMovieList = [...favMovieList, movie];
+      await AsyncStorage.setItem('@FavoriteList', JSON.stringify(favMovieList));
+      setIsFavorite(true);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const removeFavorite = async (id: number): Promise<void> => {
+    try {
+      const initialData: string | null = await AsyncStorage.getItem('@FavoriteList');
+      let favMovieList: Movie[] = initialData ? JSON.parse(initialData) : [];
+      favMovieList = favMovieList.filter((movie) => movie.id !== id);
+      await AsyncStorage.setItem('@FavoriteList', JSON.stringify(favMovieList));
+      setIsFavorite(false);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const checkIfFavorite = async (): Promise<void> => {
+    try {
+      const initialData: string | null = await AsyncStorage.getItem('@FavoriteList');
+      const favMovieList: Movie[] = initialData ? JSON.parse(initialData) : [];
+      const isFav = favMovieList.some((movie) => movie.id === id);
+      setIsFavorite(isFav);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const toggleFavorite = (): void => {
+    if (movie) {
+      if (isFavorite) {
+        removeFavorite(movie.id);
+      } else {
+        addFavorite(movie);
+      }
+    }
   };
 
   if (loading) {
@@ -80,20 +114,30 @@ const MovieDetail = ({ route }: any): JSX.Element => {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.posterContainer}>
-        <ImageBackground
-          source={{ uri: `https://image.tmdb.org/t/p/w500${movie?.poster_path}` }}
-          style={styles.poster}
+      <ImageBackground
+        resizeMode="cover"
+        style={styles.backgroundImage}
+        source={{
+          uri: `https://image.tmdb.org/t/p/w500${coverType === 'backdrop' ? movie?.backdrop_path : movie?.poster_path}`,
+        }}
+      >
+        <LinearGradient
+          colors={['#00000000', 'rgba(0, 0, 0, 0.7)']}
+          locations={[0.6, 0.8]}
+          style={styles.gradientStyle}
         >
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>{movie?.title}</Text>
+          <Text style={styles.movieTitle}>{movie?.title}</Text>
+          <View style={styles.ratingFavoriteContainer}>
             <View style={styles.ratingContainer}>
               <FontAwesome name="star" size={16} color="yellow" />
               <Text style={styles.rating}>{movie?.vote_average.toFixed(1)}</Text>
             </View>
+            <TouchableOpacity onPress={toggleFavorite}>
+              <FontAwesome name={isFavorite ? "heart" : "heart-o"} size={24} color="pink" />
+            </TouchableOpacity>
           </View>
-        </ImageBackground>
-      </View>
+        </LinearGradient>
+      </ImageBackground>
       <View style={styles.detailContainer}>
         <Text style={styles.overview}>{movie?.overview}</Text>
         <View style={styles.gridContainer}>
@@ -141,7 +185,6 @@ const MovieDetail = ({ route }: any): JSX.Element => {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
     alignItems: 'center',
   },
   loadingContainer: {
@@ -149,35 +192,38 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  posterContainer: {
-    alignItems: 'center',
-    width: '100%',
-  },
-  poster: {
+  backgroundImage: {
     width: '100%',
     height: 300,
+  },
+  movieTitle: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  gradientStyle: {
+    padding: 8,
+    height: '100%',
+    width: '100%',
+    display: 'flex',
     justifyContent: 'flex-end',
   },
-  titleContainer: {
+  ratingFavoriteContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    width: '100%',
-    paddingVertical: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
+    justifyContent: 'space-between',
+    marginRight: 8,
+    marginBottom: 8,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 4,
+    gap: 2,
   },
   rating: {
     color: 'yellow',
     fontWeight: '700',
-    marginLeft: 4,
   },
   detailContainer: {
     padding: 16,
@@ -206,7 +252,6 @@ const styles = StyleSheet.create({
   recommendationsContainer: {
     width: '100%',
     paddingLeft: 16,
-    marginTop: 16,
     marginBottom: 16,
   },
   recommendationHeader: {
