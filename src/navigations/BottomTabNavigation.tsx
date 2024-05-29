@@ -22,6 +22,11 @@ const HomeStackNavigator = (): JSX.Element => (
       component={MovieDetail}
       options={{ headerShown: true, title: 'Movie Detail' }}
     />
+     <Stack.Screen
+      name="Favorite"
+      component={Favorite}
+      options={{ headerShown: true, title: 'Favorite' }}
+    />
   </Stack.Navigator>
 );
 
@@ -43,7 +48,7 @@ const SearchStackNavigator = (): JSX.Element => (
 const FavoriteStackNavigator = (): JSX.Element => (
   <Stack.Navigator>
     <Stack.Screen
-      name="Favorite"
+      name="FavoriteScreen"
       component={Favorite}
       options={{ headerShown: false }}
     />
