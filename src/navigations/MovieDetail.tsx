@@ -201,6 +201,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    paddingLeft: 8,
   },
   gradientStyle: {
     padding: 8,
@@ -220,6 +221,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+    paddingLeft: 8,
   },
   rating: {
     color: 'yellow',
