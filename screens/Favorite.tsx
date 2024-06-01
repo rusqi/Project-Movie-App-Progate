@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StatusBar, StyleSheet, Text, FlatList, Dimensions, TouchableOpacity } from 'react-native';
+import { View, StatusBar, StyleSheet, FlatList, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MovieItem from '../src/components/movies/MovieItem';
 import type { Movie } from '../src/types/app';
@@ -25,6 +25,7 @@ const Favorite = (): JSX.Element => {
       }
     } catch (error) {
       console.log(error);
+      Alert.alert('Error', 'Failed to load favorite movies.');
     }
   };
 
@@ -60,11 +61,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-  },
   listContainer: {
     paddingBottom: 16,
     justifyContent: 'space-between',
@@ -73,7 +69,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   separator: {
-    width: '100%',
     height: 8,
   },
 });

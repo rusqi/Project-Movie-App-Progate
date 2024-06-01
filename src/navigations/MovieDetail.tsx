@@ -13,7 +13,7 @@ const MovieDetail = ({ route }: any): JSX.Element => {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>('');
 
   useEffect(() => {
     fetchMovieDetail();
@@ -29,7 +29,13 @@ const MovieDetail = ({ route }: any): JSX.Element => {
       const recommendationData = await fetchFromApi(`https://api.themoviedb.org/3/movie/${id}/recommendations`);
       setRecommendations(recommendationData.results);
     } catch (err) {
-      setError('Failed to fetch data');
+      if (err instanceof Error) {
+        setError(`Failed to fetch data: ${err.message}`);
+        console.error('Error fetching movie detail:', err.message);
+      } else {
+        setError('An unknown error occurred');
+        console.error('An unknown error occurred while fetching movie detail:', err);
+      }
     } finally {
       setLoading(false);
     }
@@ -59,7 +65,7 @@ const MovieDetail = ({ route }: any): JSX.Element => {
       await AsyncStorage.setItem('@FavoriteList', JSON.stringify(favMovieList));
       setIsFavorite(true);
     } catch (error) {
-      console.log(error);
+      console.error('Error adding to favorites:', error);
     }
   };
 
@@ -71,7 +77,7 @@ const MovieDetail = ({ route }: any): JSX.Element => {
       await AsyncStorage.setItem('@FavoriteList', JSON.stringify(favMovieList));
       setIsFavorite(false);
     } catch (error) {
-      console.log(error);
+      console.error('Error removing from favorites:', error);
     }
   };
 
@@ -82,7 +88,7 @@ const MovieDetail = ({ route }: any): JSX.Element => {
       const isFav = favMovieList.some((movie) => movie.id === id);
       setIsFavorite(isFav);
     } catch (error) {
-      console.log(error);
+      console.error('Error checking favorites:', error);
     }
   };
 
@@ -152,7 +158,7 @@ const MovieDetail = ({ route }: any): JSX.Element => {
           <View style={styles.gridItem}>
             <Text style={styles.gridTitle}>Release Date</Text>
             <Text style={styles.gridValue}>
-              {movie?.release_date ? new Date(movie.release_date).toDateString() : 'N/A'}
+            {movie?.release_date ? new Date(movie.release_date).toDateString() : 'N/A'}
             </Text>
           </View>
           <View style={styles.gridItem}>

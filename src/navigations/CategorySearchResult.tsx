@@ -4,8 +4,13 @@ import { API_ACCESS_TOKEN } from '@env';
 import MovieItem from '../components/movies/MovieItem';
 import { Movie } from '../types/app';
 
+interface Genre {
+  id: number;
+  name: string;
+}
+
 const CategorySearchResult = ({ route }: { route: any }): JSX.Element => {
-  const { selectedGenres } = route.params;
+  const { selectedGenres, genres } = route.params;
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
@@ -17,10 +22,15 @@ const CategorySearchResult = ({ route }: { route: any }): JSX.Element => {
   const fetchMovies = async () => {
     setLoading(true);
     const genreIdsString = selectedGenres.join(',');
-    const url = `https://api.themoviedb.org/3/discover/movie?api_key=${API_ACCESS_TOKEN}&with_genres=${genreIdsString}`;
+    const url = `https://api.themoviedb.org/3/discover/movie?with_genres=${genreIdsString}`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: {
+          accept: 'application/json',
+          Authorization: `Bearer ${API_ACCESS_TOKEN}`,
+        },
+      });
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`Network response was not ok: ${errorText}`);
@@ -41,21 +51,20 @@ const CategorySearchResult = ({ route }: { route: any }): JSX.Element => {
     }
   };
 
-  const renderMovieItem = ({ item }: { item: Movie }): JSX.Element => {
-    return (
+  const renderMovieItem = ({ item }: { item: Movie }): JSX.Element => (
+    <View style={styles.movieItemContainer}>
       <MovieItem 
         movie={item}
         size={{
-          width: Dimensions.get('window').width / 2 - 24,
-          height: (Dimensions.get('window').width / 2 - 24) * 1.5,
+          width: (Dimensions.get('window').width - 64) / 3, // Adjust the width of each item
+          height: (Dimensions.get('window').width - 64) / 3 * 1.5, // Maintain the aspect ratio
         }}
-        coverType="poster" />
-    );
-  };
+        coverType="poster" 
+      />
+    </View>
+  );
 
-  const renderSeparator = (): JSX.Element => {
-    return <View style={styles.separator} />;
-  };
+  const renderSeparator = (): JSX.Element => <View style={styles.separator} />;
 
   const renderFooter = (): JSX.Element | null => {
     if (!loading) return null;
@@ -79,6 +88,10 @@ const CategorySearchResult = ({ route }: { route: any }): JSX.Element => {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.headerText}>Result of {selectedGenres.map((genreId: number) => {
+        const selectedGenre = genres.find((genre: Genre) => genre.id === genreId);
+        return selectedGenre ? selectedGenre.name : 'Unknown Genre';
+      }).join(', ')} Genre</Text>
       <FlatList
         data={searchResults}
         renderItem={renderMovieItem}
@@ -87,7 +100,7 @@ const CategorySearchResult = ({ route }: { route: any }): JSX.Element => {
         ItemSeparatorComponent={renderSeparator}
         ListFooterComponent={renderFooter}
         ListEmptyComponent={renderEmptyState}
-        numColumns={2}
+        numColumns={3} // Set to 3 columns
       />
     </View>
   );
@@ -97,26 +110,36 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingHorizontal: 16,
+  },
+  headerText: {
+    fontSize: 24,
+    marginVertical: 16,
+    textAlign: 'center',
   },
   movieList: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: 'center', // Center items horizontally
   },
-  separator: {
-    height: 16,
-  },
-  loading: {
+  movieItemContainer: {
+    paddingLeft: 7, // Add padding between items
+    paddingBottom: 7, // Add padding between items
+    paddingTop: 7, // Add padding between items
+    alignItems: 'center', // Center items horizontally
+ },
+ separator: {
+    height: 8,
+ },
+ loading: {
     marginVertical: 20,
     alignItems: 'center',
   },
   emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+   justifyContent: 'center',
+   alignItems: 'center',
     padding: 20,
   },
-  emptyText: {
-    color: '#ff0000',
+ emptyText: {
+   color: '#ff0000',
     fontSize: 16,
   },
 });

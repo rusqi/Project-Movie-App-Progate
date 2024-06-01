@@ -31,7 +31,7 @@ const MovieItem = React.memo(({ movie, size, coverType }: MovieItemProps): JSX.E
           style={styles.gradientStyle}
         >
           <Text style={styles.movieTitle}>{movie.title}</Text>
-          {movie.vote_average !== undefined && ( // Menambahkan pengecekan untuk nilai yang tidak terdefinisi
+          {movie.vote_average !== undefined && (
             <View style={styles.ratingContainer}>
               <FontAwesome name="star" size={16} color="yellow" />
               <Text style={styles.rating}>{movie.vote_average.toFixed(1)}</Text>
@@ -52,23 +52,24 @@ const styles = StyleSheet.create({
   },
   movieTitle: {
     color: 'white',
+    fontSize: 14,
   },
   gradientStyle: {
     padding: 8,
     height: '100%',
     width: '100%',
     borderRadius: 8,
-    display: 'flex',
     justifyContent: 'flex-end',
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    marginTop: 4,
   },
   rating: {
     color: 'yellow',
     fontWeight: '700',
+    marginLeft: 4,
   },
 });
 

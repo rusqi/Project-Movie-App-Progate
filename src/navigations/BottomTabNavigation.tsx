@@ -23,11 +23,6 @@ const HomeStackNavigator = (): JSX.Element => (
       component={MovieDetail}
       options={{ headerShown: true, title: 'Movie Detail' }}
     />
-     <Stack.Screen
-      name="Favorite"
-      component={Favorite}
-      options={{ headerShown: true, title: 'Favorite' }}
-    />
   </Stack.Navigator>
 );
 

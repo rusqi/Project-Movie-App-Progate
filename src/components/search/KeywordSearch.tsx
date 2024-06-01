@@ -1,31 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, TextInput, StyleSheet, FlatList, TouchableOpacity, Dimensions, Text, ActivityIndicator } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { API_ACCESS_TOKEN } from '@env';
 import MovieItem from '../movies/MovieItem';
 import type { Movie } from '../../types/app';
 
+const coverImageSize = {
+  width: Dimensions.get('window').width / 3 - 32,
+  height: (Dimensions.get('window').width / 3 - 32) * 1.5,
+};
+
 const KeywordSearch = (): JSX.Element => {
   const [keyword, setKeyword] = useState('');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
-  const [page, setPage] = useState(1); // Halaman saat ini
+  const [page, setPage] = useState(1);
+  const [error, setError] = useState<string | null>(null);
   const { width } = Dimensions.get('window');
 
   useEffect(() => {
-    // Reset state saat keyword berubah
     setMovies([]);
     setPage(1);
   }, [keyword]);
 
-  const handleSubmit = (): void => {
-    if (keyword) {
-      fetchMovies();
-    }
-  };
+  const fetchMovies = useCallback(async (): Promise<void> => {
+    if (!keyword) return;
 
-  const fetchMovies = (): void => {
     setLoading(true);
+    setError(null);
+
     const url = `https://api.themoviedb.org/3/search/movie?query=${keyword}&page=${page}`;
     const options = {
       method: 'GET',
@@ -35,30 +38,40 @@ const KeywordSearch = (): JSX.Element => {
       },
     };
 
-    fetch(url, options)
-      .then(async (response) => await response.json())
-      .then((response) => {
-        setMovies((prevMovies) => [...prevMovies, ...response.results]);
-        setPage(page + 1);
-      })
-      .catch((error) => console.error('Error fetching movies:', error))
-      .finally(() => setLoading(false));
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      if (page === 1) {
+        setMovies(data.results);
+      } else {
+        setMovies((prevMovies) => [...prevMovies, ...data.results]);
+      }
+      setPage((prevPage) => prevPage + 1);
+    } catch (error) {
+      setError('Error fetching movies.');
+    } finally {
+      setLoading(false);
+    }
+  }, [keyword, page]);
+
+  const handleSubmit = (): void => {
+    if (keyword) {
+      setPage(1);
+      fetchMovies();
+    }
   };
 
-  const renderMovieItem = ({ item }: { item: Movie }): JSX.Element => {
-    return (
-      <TouchableOpacity style={styles.movieItemContainer}>
-        <MovieItem 
-          movie={item}
-          size={{ width: width / 3 - 32, height: (width / 3 - 32) * 1.5 }} // Sesuaikan ukuran
-          coverType="poster" />
-      </TouchableOpacity>
-    );
-  };
+  const renderMovieItem = ({ item }: { item: Movie }): JSX.Element => (
+    <TouchableOpacity style={styles.movieItemContainer}>
+      <MovieItem 
+        movie={item}
+        size={coverImageSize}
+        coverType="poster" 
+      />
+    </TouchableOpacity>
+  );
 
-  const renderSeparator = (): JSX.Element => {
-    return <View style={styles.separator} />;
-  };
+  const renderSeparator = (): JSX.Element => <View style={styles.separator} />;
 
   const renderFooter = (): JSX.Element | null => {
     if (!loading) return null;
@@ -74,24 +87,28 @@ const KeywordSearch = (): JSX.Element => {
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Input title movie here"
+          placeholder="Input movie title here"
           value={keyword}
           onChangeText={setKeyword}
           onSubmitEditing={handleSubmit}
         />
-        <FontAwesome name="search" size={20} color="black" style={styles.icon} />
+        <FontAwesome name="search" size={20} color="black" style={styles.icon} onPress={handleSubmit} />
       </View>
-      <FlatList
-        data={movies}
-        renderItem={renderMovieItem}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={styles.movieList}
-        numColumns={3}
-        ItemSeparatorComponent={renderSeparator}
-        ListFooterComponent={renderFooter}
-        onEndReached={fetchMovies} // Memuat lebih banyak saat mendekati akhir daftar
-        onEndReachedThreshold={0.1} // Ambang batas jarak dari akhir daftar untuk memuat lebih banyak
-      />
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : (
+        <FlatList
+          data={movies}
+          renderItem={renderMovieItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.movieList}
+          numColumns={3}
+          ItemSeparatorComponent={renderSeparator}
+          ListFooterComponent={renderFooter}
+          onEndReached={fetchMovies}
+          onEndReachedThreshold={0.1}
+        />
+      )}
     </View>
   );
 };
@@ -128,13 +145,18 @@ const styles = StyleSheet.create({
     height: 4,
   },
   movieItemContainer: {
-    margin: 4, 
-    borderRadius: 8, 
-    overflow: 'hidden', 
+    margin: 4,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
   loading: {
     marginTop: 10,
     alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 
